@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+/p1_abibd_n.layout
+
+/p1_abibd_n.dev
+/Makefile.win
