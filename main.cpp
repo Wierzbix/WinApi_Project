@@ -16,22 +16,23 @@ HINSTANCE hIns;
 #define IDWATEK 424
 
 CRITICAL_SECTION CriticalSection;
+std::string getTemperature(char*, char*);
+int InitWinsock();
 int status = 0;
 
 char tBuff [200];
 int a = 2; //to zwraca nam w¹tek
 
 void FunThread(void*) {
-	
-    // Request ownership of the critical section.
     EnterCriticalSection(&CriticalSection); 
+	InitWinsock();
+	std::string temperature = getTemperature("razniewski.eu", "5000");
+	
+	MessageBox(h1, temperature.c_str() ,"Temperatura w czestochowie!",MB_OK);
 
-	a *= a;
-	sprintf(tBuff, "Zakonczono");
-
-	status = 2;
-
-    // Release ownership of the critical section.
+	WSACleanup();
+	
+	
     LeaveCriticalSection(&CriticalSection);	
 	
 	_endthread();
@@ -41,8 +42,6 @@ int InitWinsock () {
 	WORD wVersionRequested;
     WSADATA wsaData;
     int err;
-
-/* Use the MAKEWORD(lowbyte, highbyte) macro declared in Windef.h */
     wVersionRequested = MAKEWORD(2, 2);
 
     err = WSAStartup(wVersionRequested, &wsaData);
@@ -50,28 +49,16 @@ int InitWinsock () {
         MessageBox(h1, "Nie mogê za³adowaæ Winsocka", "B³¹d!", MB_OK);
        // printf("WSAStartup failed with error: %d\n", err);
         return 1;
-    }
-
-/* Confirm that the WinSock DLL supports 2.2.*/
-/* Note that if the DLL supports versions greater    */
-/* than 2.2 in addition to 2.2, it will still return */
-/* 2.2 in wVersion since that is the version we      */
-/* requested.                                        */
+    }                                    
 
 
     if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
-        /* Tell the user that we could not find a usable */
-        /* WinSock DLL.                                  */
-        //printf("Could not find a usable version of Winsock.dll\n");
-        //WSACleanup();
- 
-        //return 1;
     }
     else {
     	char buff [200];
     	sprintf(buff, "Wersja Winsocka: %d.%d", LOBYTE(wsaData.wVersion), HIBYTE(wsaData.wVersion));
 		
-		MessageBox(h1, buff , "Gotowe!", MB_OK);
+		//MessageBox(h1, buff , "Gotowe!", MB_OK);
     	
         //printf("The Winsock 2.2 dll was found okay\n");
     }
@@ -79,7 +66,7 @@ int InitWinsock () {
    // WSACleanup();	
 }
 
-SOCKET OpenClientTCP(char * host, char * port, char * plik) {
+std::string getTemperature(char * host, char * port) {
 	SOCKET ConnectSocket = INVALID_SOCKET;
 	
 	ConnectSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -87,8 +74,7 @@ SOCKET OpenClientTCP(char * host, char * port, char * plik) {
     if (ConnectSocket == INVALID_SOCKET) {
         char buff [300];
 		sprintf(buff, "socket function failed with error = %d\n", WSAGetLastError());
-        //MessageBox(h1, buff, "Gotowe!", MB_OK); 
-		return -1;
+		return NULL;
     }
     
 	sockaddr_in clientService;
@@ -100,8 +86,7 @@ SOCKET OpenClientTCP(char * host, char * port, char * plik) {
     	if (h != NULL)
 			clientService.sin_addr.s_addr=*((unsigned long*)h->h_addr);
 		else {
-			//MessageBox(h1, "Nie uda³o siê odnaleŸæ hosta", "Uwaga!", MB_OK);
-			return -2;
+			return NULL;
 		}
     }
     
@@ -113,21 +98,18 @@ SOCKET OpenClientTCP(char * host, char * port, char * plik) {
     else {
     	if (atoi(port) == 0) {
     		//MessageBox(h1, "Wpisany port jest niepoprawny", "B³¹d!", MB_OK); 
-    		return -2;	
+    		return NULL;	
     	}
 		else {
 			if (atoi(port) < 1)
-				return -1;
+				return NULL;
 			else
 				clientService.sin_port = htons(atoi(port));
 		}
 	}
 	
-	MessageBox(h1, inet_ntoa(clientService.sin_addr), "Adres", MB_OK);
 	
 	char pbuff [2000];
-	sprintf(pbuff, "Port w zapisie sieciowym: %d\nPort po konwersji na nasz¹ architekturê: %d", clientService.sin_port, ntohs(clientService.sin_port));
-	//MessageBox(h1, pbuff, "Gotowe!", MB_OK); 
     
     int iResult = connect(ConnectSocket, (sockaddr*)&clientService, sizeof(clientService));
     if (iResult == SOCKET_ERROR) {
@@ -136,64 +118,47 @@ SOCKET OpenClientTCP(char * host, char * port, char * plik) {
     }
     //wysylanie
 	int recvbuflen = DEFAULT_BUFLEN;
-    char *sendbuf = "GET /index.html HTTP/1.1\r\nHost: www.example.com\r\n\r\n";
     char recvbuf[DEFAULT_BUFLEN] = "";
 
- 	
-	int sendResult = send( ConnectSocket, sendbuf, (int)strlen(sendbuf), 0 );
- 	if (sendResult == SOCKET_ERROR) {
-		//MessageBox(h1,"Cos poszlo nie tak przy wysylaniu ","Tytul okna",MB_OKCANCEL|MB_ICONQUESTION|MB_DEFBUTTON2);	
-        closesocket(ConnectSocket);
-        WSACleanup();
-        return -3;
-    }
+    
  	int reciveResult = 0;
- 	/*
- 	std::ofstream ofs (plik, std::ofstream::out);
- 	
-	 do {
-     	reciveResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-        if ( reciveResult > 0 )
-      	
-		  ofs << recvbuf;
-
-    } while( reciveResult > 0 );
-
-  	ofs.close();
-  	*/
-  	
-  	 FILE *fp;
- 	fp = fopen(plik, "w+");
 
  	char sbuff[300];
- 	sprintf(sbuff, "Port w zapisie sieciowym: %d\nPort po konwersji na nasza architekture: %d", clientService.sin_addr.s_addr, ntohs(clientService.sin_addr.s_addr));
  	
- 	
- 	//int recvbuflen = DEFAULT_BUFLEN;
-    char *sndbuf = "GET /index.html HTTP/1.1\r\nHost: www.example.com\r\n\r\n";
+    char *sndbuf = "GET / HTTP/1.1\r\nHost: razniewski.eu\r\n\r\n";
     char rcvbuf[DEFAULT_BUFLEN] = "";
-
- 	
+    
+	
+	int nTimeout = 1000; 
+	setsockopt(ConnectSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&nTimeout, sizeof(int));
+	
+ 	std::string leo;
     int sndResult = send( ConnectSocket, sndbuf, (int)strlen(sndbuf), 0 );
  	if (sndResult == SOCKET_ERROR) {
         closesocket(ConnectSocket);
         WSACleanup();
-        return -1;
+        return NULL;
     }
  	int rciveResult = 0;
  	do {
      	rciveResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-        if ( rciveResult > 0 )
-        	fputs(rcvbuf, fp);
-        else if ( rciveResult == 0 )
-        	return -1;
-        else
-        	return -1;
+     	char buffer[20];
+		 _itoa(rciveResult, buffer, 20);
+        if ( rciveResult > 0 ){
+        	leo.append(recvbuf);
+		}
 
     } while( rciveResult > 0 );
  	
-	return ConnectSocket;
+ 	std::string tempStart = "TEMPERATURASTART;";
+ 	std::string tempStop = ";STOPTEMPERATURA";
+ 	unsigned first = leo.find(tempStart);
+
+ 	
+ 	unsigned second = leo.find(";STOPTEMPERATURA");
+	return leo.substr(first + tempStart.length() , second - first - tempStop.length() - 1);
 }
+
 
 void BudujGuziki(HWND hParent) {
 	CreateWindowEx(0, "BUTTON", "Zamknij program", WS_VISIBLE|WS_CHILD,
@@ -230,13 +195,7 @@ void BudujGuziki(HWND hParent) {
 		300, /* width */
 		300, /* height */
 		hParent, (HMENU)IDEDIT2, hIns, NULL);
-		
-	CreateWindowEx(0, "BUTTON", "Po³¹cz z sieci¹", WS_VISIBLE|WS_CHILD,
-		480, /* x */
-		10, /* y */
-		120, /* width */
-		30, /* height */
-		hParent, (HMENU)IDSIEC, hIns, NULL);									
+											
 
 		CreateWindowEx(0, "BUTTON", "Uruchom w¹tek", WS_VISIBLE|WS_CHILD,
 		450, /* x */
@@ -296,13 +255,6 @@ LRESULT CALLBACK WndProc1(HWND h1, UINT Message, WPARAM wParam, LPARAM lParam) {
 				SetWindowText(e2, buff1);
 				//delete buff1;
 				//delete buff2;
-				break;
-			}
-			
-			case IDSIEC: {
-				InitWinsock();
-				OpenClientTCP("tibia.pl", "80", "plik.html");
-				WSACleanup();
 				break;
 			}
 			
