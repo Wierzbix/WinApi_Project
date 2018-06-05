@@ -11,7 +11,7 @@ ResourceIncludes=
 MakeIncludes=
 Compiler=
 CppCompiler=
-Linker="../../winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib/libws2_32.a"_@@_
+Linker="../Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib/libws2_32.a"_@@_"../Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib/libsqlite3.a"_@@__@@_
 IsCpp=1
 Icon=
 ExeOutput=
@@ -28,8 +28,8 @@ Folders=
 IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=0
-CompilerSettings=0000000000000000000000000
-UnitCount=1
+CompilerSettings=0000000000000000001000000
+UnitCount=2
 
 [VersionInfo]
 Major=1
@@ -59,4 +59,14 @@ Link=1
 Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
+
+[Unit2]
+FileName=sqlite3.c
+CompileCpp=0
+Folder=
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=$(CC) -c sqlite3.c -o sqlite3.o $(CFLAGS)
 

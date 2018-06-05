@@ -1,17 +1,17 @@
 # Project: p1_abibd_n
 # Makefile created by Dev-C++ 5.11
 
-CPP      = g++.exe
-CC       = gcc.exe
+CPP      = g++.exe -D__DEBUG__
+CC       = gcc.exe -D__DEBUG__
 WINDRES  = windres.exe
-OBJ      = main.o
-LINKOBJ  = main.o
-LIBS     = -L"C:/Users/Wierzba/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/lib" -L"C:/Users/Wierzba/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc -mwindows "../../winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib/libws2_32.a"
-INCS     = -I"C:/Users/Wierzba/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/include" -I"C:/Users/Wierzba/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Users/Wierzba/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include"
-CXXINCS  = -I"C:/Users/Wierzba/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/include" -I"C:/Users/Wierzba/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Users/Wierzba/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Users/Wierzba/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++"
+OBJ      = main.o sqlite3.o
+LINKOBJ  = main.o sqlite3.o
+LIBS     = -L"C:/Users/Jakub Waœko/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/lib" -L"C:/Users/Jakub Waœko/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc -mwindows "../Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib/libws2_32.a" "../Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib/libsqlite3.a" -g3
+INCS     = -I"C:/Users/Jakub Waœko/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/include" -I"C:/Users/Jakub Waœko/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Users/Jakub Waœko/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include"
+CXXINCS  = -I"C:/Users/Jakub Waœko/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/include" -I"C:/Users/Jakub Waœko/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Users/Jakub Waœko/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Users/Jakub Waœko/Desktop/winapi/Dev-Cpp 5.11 TDM-GCC x64 4.9.2 Portable/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++"
 BIN      = p1_abibd_n.exe
-CXXFLAGS = $(CXXINCS) 
-CFLAGS   = $(INCS) 
+CXXFLAGS = $(CXXINCS) -g3
+CFLAGS   = $(INCS) -g3
 RM       = rm.exe -f
 
 .PHONY: all all-before all-after clean clean-custom
@@ -26,3 +26,6 @@ $(BIN): $(OBJ)
 
 main.o: main.cpp
 	$(CPP) -c main.cpp -o main.o $(CXXFLAGS)
+
+sqlite3.o: sqlite3.c
+	$(CC) -c sqlite3.c -o sqlite3.o $(CFLAGS)
