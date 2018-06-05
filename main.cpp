@@ -4,6 +4,11 @@
 #include <stdio.h>
 #include <fstream>
 #include <process.h>
+#include "sqlite3.h"
+#include <ctime>
+#include <string>
+#include <sstream>
+#include <list>
 
 HWND h1, h2, h3;
 HINSTANCE hIns;
@@ -15,27 +20,227 @@ HINSTANCE hIns;
 #define IDT_TIMER1 1
 #define IDWATEK 424
 
+namespace patch
+{
+    template < typename T > std::string to_string( const T& n )
+    {
+        std::ostringstream stm ;
+        stm << n ;
+        return stm.str() ;
+    }
+}
+
 CRITICAL_SECTION CriticalSection;
 std::string getTemperature(char*, char*);
 int InitWinsock();
 int status = 0;
 
 char tBuff [200];
-int a = 2; //to zwraca nam w¹tek
+int a = 2; //to zwraca nam w1tek
+
+//do tych list zaciaga dane z bazy (1 kolumna - 1 lista)
+std::list<std::string> dateList;
+std::list<std::string> timeList;
+std::list<std::string> cityList;
+std::list<std::string> tempList;
+
+// *** BAZA ***
+
+bool CreateDatabase() {
+	
+	sqlite3 *db;
+	sqlite3_stmt *statement;
+	char *errorMessage = 0;
+	int stepNotComplete;
+	std::string query = "CREATE TABLE IF NOT EXISTS Weather (date TEXT, time TEXT, city TEXT, temperature INTEGER);";
+	FILE *outStream  = stdout;
+	
+	stepNotComplete = sqlite3_open("weather.sqlite3", &db);
+	
+	if (stepNotComplete) {
+		fprintf(outStream, "Nie mozna otworzyc bazy danych - %s\n", sqlite3_errmsg(db));
+		return 1;	
+	}
+
+	stepNotComplete = sqlite3_exec(db, query.c_str(), NULL, NULL, &errorMessage);
+
+	if (stepNotComplete) {
+		fprintf(outStream, "%s\n", sqlite3_errmsg(db));
+		return 1;	
+	}
+
+	sqlite3_close(db);
+	
+	return 0;
+}
+
+bool DatabaseWriter(std::string temp, std::string city) {
+	
+	time_t now;
+	struct tm timeinfo;
+	time(&now);	
+	localtime_r(&now, &timeinfo);
+
+	timeinfo.tm_year += 1900;
+	timeinfo.tm_mon += 1;
+	
+	std::string dateNow = patch::to_string(timeinfo.tm_mday);
+	dateNow += "-";
+	dateNow += patch::to_string(timeinfo.tm_mon);
+	dateNow += "-";
+	dateNow += patch::to_string(timeinfo.tm_year);
+	
+	std::string timeNow = patch::to_string(timeinfo.tm_hour);
+	timeNow += ":";
+	timeNow += patch::to_string(timeinfo.tm_min);
+	
+	sqlite3 *db;
+	sqlite3_stmt *statement;
+	char *errorMessage = 0;
+	int stepNotComplete;
+	
+	std::string query = "INSERT INTO Weather (date, time, city, temperature) VALUES ('";
+	query += dateNow;
+	query += "', '";
+	query += timeNow;
+	query += "', '";
+	query += city;
+	query += "', ";
+	query += temp;
+	query += ");";
+	
+	FILE *outStream  = stdout;
+	
+	stepNotComplete = sqlite3_open("weather.sqlite3", &db);
+	
+	if (stepNotComplete) {
+		fprintf(outStream, "Nie mozna otworzyc bazy danych - %s\n", sqlite3_errmsg(db));
+		return 1;	
+	}
+	
+	stepNotComplete = sqlite3_exec(db, query.c_str(), NULL, NULL, &errorMessage);
+
+	if (stepNotComplete) {
+		fprintf(outStream, "%s\n", sqlite3_errmsg(db));
+		return 1;	
+	}
+
+	sqlite3_close(db);	
+	
+	/*
+	std::string ret = patch::to_string(timeinfo.tm_mday);
+	ret += "-";
+	ret += patch::to_string(timeinfo.tm_mon);
+	ret += "-";
+	ret += patch::to_string(timeinfo.tm_year);
+	ret += " ";
+	ret += patch::to_string(timeinfo.tm_hour);
+	ret += ":";
+	ret += patch::to_string(timeinfo.tm_min);
+	*/
+	
+	return 0;
+}
+
+bool DatabaseReaderDate() {
+		
+	sqlite3 *db;
+	sqlite3_open("weather.sqlite3", &db);
+	
+	sqlite3_stmt *statement;
+	sqlite3_prepare_v2(db, "SELECT date FROM Weather;", -1, &statement, NULL); 
+	
+	while (sqlite3_step(statement) == SQLITE_ROW) {
+		std::string dateString = std::string((char*)sqlite3_column_text(statement, 0));
+		dateList.push_back(dateString);
+	}
+
+	sqlite3_finalize(statement);
+	sqlite3_close(db);    
+}
+
+bool DatabaseReaderTime() {
+		
+	sqlite3 *db;
+	sqlite3_open("weather.sqlite3", &db);
+	
+	sqlite3_stmt *statement;
+	sqlite3_prepare_v2(db, "SELECT time FROM Weather;", -1, &statement, NULL); 
+	
+	while (sqlite3_step(statement) == SQLITE_ROW) {
+		std::string timeString = std::string((char*)sqlite3_column_text(statement, 0));
+		timeList.push_back(timeString);
+	}
+
+	sqlite3_finalize(statement);
+	sqlite3_close(db);    
+}
+
+bool DatabaseReaderCity() {
+		
+	sqlite3 *db;
+	sqlite3_open("weather.sqlite3", &db);
+	
+	sqlite3_stmt *statement;
+	sqlite3_prepare_v2(db, "SELECT city FROM Weather;", -1, &statement, NULL); 
+	
+	while (sqlite3_step(statement) == SQLITE_ROW) {
+		std::string cityString = std::string((char*)sqlite3_column_text(statement, 0));
+		cityList.push_back(cityString);
+	}
+
+	sqlite3_finalize(statement);
+	sqlite3_close(db);    
+}
+
+bool DatabaseReaderTemp() {
+		
+	sqlite3 *db;
+	sqlite3_open("weather.sqlite3", &db);
+	
+	sqlite3_stmt *statement;
+	sqlite3_prepare_v2(db, "SELECT temperature FROM Weather;", -1, &statement, NULL); 
+	
+	while (sqlite3_step(statement) == SQLITE_ROW) {
+		std::string tempString = std::string((char*)sqlite3_column_text(statement, 0));
+		tempList.push_back(tempString);
+	}
+
+	sqlite3_finalize(statement);
+	sqlite3_close(db);    
+}
+
+// ** KONIEC BAZY ***
 
 void FunThread(void*) {
-    EnterCriticalSection(&CriticalSection); 
+	//SPRAWDZENIE CZY JEST BAZA + TABELA
+	//JESLI NIE MA, TWORZY Z AUTOMATU
+    CreateDatabase();
+    
+	EnterCriticalSection(&CriticalSection); 
 	InitWinsock();
 	std::string temperature = getTemperature("razniewski.eu", "5000");
 	
 	MessageBox(h1, temperature.c_str() ,"Temperatura w czestochowie!",MB_OK);
-
-	WSACleanup();
+    
+    //ZAPIS TEMPERATURY DO BAZY
+	DatabaseWriter(temperature.c_str(), "Czestochowa");
 	
+	WSACleanup();
+
+	//ODCZYT Z BAZY, PODZIAL NA POSZCZEGOLNE KOLUMNY
+	DatabaseReaderDate();
+	//DatabaseReaderCity(); 
+	DatabaseReaderTime();
+	DatabaseReaderTemp();
+	
+	//dla sprawdzenia...
+	/*for( std::list<std::string>::iterator iter=dateList.begin(); iter != dateList.end(); iter++ )
+      MessageBox(h1, (*iter).c_str(),"Temperatura w czestochowie!",MB_OK);*/
 	
     LeaveCriticalSection(&CriticalSection);	
-	
-	_endthread();
+
+	_endthread();	
 }
 
 int InitWinsock () {
@@ -46,7 +251,7 @@ int InitWinsock () {
 
     err = WSAStartup(wVersionRequested, &wsaData);
     if (err != 0) {
-        MessageBox(h1, "Nie mogê za³adowaæ Winsocka", "B³¹d!", MB_OK);
+        MessageBox(h1, "Nie moge za3adowaa Winsocka", "B31d!", MB_OK);
        // printf("WSAStartup failed with error: %d\n", err);
         return 1;
     }                                    
@@ -97,7 +302,7 @@ std::string getTemperature(char * host, char * port) {
     }
     else {
     	if (atoi(port) == 0) {
-    		//MessageBox(h1, "Wpisany port jest niepoprawny", "B³¹d!", MB_OK); 
+    		//MessageBox(h1, "Wpisany port jest niepoprawny", "B31d!", MB_OK); 
     		return NULL;	
     	}
 		else {
@@ -197,7 +402,7 @@ void BudujGuziki(HWND hParent) {
 		hParent, (HMENU)IDEDIT2, hIns, NULL);
 											
 
-		CreateWindowEx(0, "BUTTON", "Uruchom w¹tek", WS_VISIBLE|WS_CHILD,
+		CreateWindowEx(0, "BUTTON", "Uruchom w1tek", WS_VISIBLE|WS_CHILD,
 		450, /* x */
 		300, /* y */
 		120, /* width */
@@ -225,7 +430,7 @@ LRESULT CALLBACK WndProc1(HWND h1, UINT Message, WPARAM wParam, LPARAM lParam) {
 				if (status == 2) {
 					status = 0;
 					char trBuff [300];
-					sprintf(trBuff, "W¹tek zakoñczony. A obliczone z w¹tku wynosi: %d", a);
+					sprintf(trBuff, "W1tek zakonczony. A obliczone z w1tku wynosi: %d", a);
 					MessageBox(h1, trBuff,"Uwaga!",MB_OK);	
 				}
 		}
@@ -235,7 +440,7 @@ LRESULT CALLBACK WndProc1(HWND h1, UINT Message, WPARAM wParam, LPARAM lParam) {
 		switch (LOWORD(wParam)) {
 			case IDZAMKNIJ: {
 				/*MessageBox(h1,
-	        		"Naciœniêto przycisk zamknij",
+	        		"Nacionieto przycisk zamknij",
 	        		"Uwaga!",
 	       			MB_ICONWARNING | MB_OK
 		    	);*/
@@ -246,7 +451,7 @@ LRESULT CALLBACK WndProc1(HWND h1, UINT Message, WPARAM wParam, LPARAM lParam) {
 				//SetWindowText(g1, "Mucha");
 				e1 = GetDlgItem(h1, IDEDIT);
 				e2 = GetDlgItem(h1, IDEDIT2);
-				//SetWindowText(e1, "Jab³ko");
+				//SetWindowText(e1, "Jab3ko");
 				char buff1[10];
 				char buff2[10];
 				GetWindowText(e1, buff1, 10);
