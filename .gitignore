@@ -34,3 +34,6 @@
 
 /p1_abibd_n.dev
 /Makefile.win
+sqlite3.c
+sqlite3.h
+weather.sqlite3
